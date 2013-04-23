@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #define KISSDB_HEADER_SIZE ((sizeof(uint64_t) * 3) + 4)
 
@@ -340,17 +341,17 @@ int main(int argc,char **argv)
 		for(j=0;j<8;++j)
 			v[j] = i;
 		if (KISSDB_put(&db,&i,v)) {
-			printf("KISSDB_put failed (%llu)\n",i);
+			printf("KISSDB_put failed (%"PRIu64")\n",i);
 			return -1;
 		}
 		memset(v,0,sizeof(v));
 		if ((q = KISSDB_get(&db,&i,v))) {
-			printf("KISSDB_get (1) failed (%llu) (%d)\n",i,q);
+			printf("KISSDB_get (1) failed (%"PRIu64") (%d)\n",i,q);
 			return -1;
 		}
 		for(j=0;j<8;++j) {
 			if (v[j] != i) {
-				printf("KISSDB_get (1) failed, bad data (%llu)\n",i);
+				printf("KISSDB_get (1) failed, bad data (%"PRIu64")\n",i);
 				return -1;
 			}
 		}
@@ -360,12 +361,12 @@ int main(int argc,char **argv)
 
 	for(i=0;i<10000;++i) {
 		if ((q = KISSDB_get(&db,&i,v))) {
-			printf("KISSDB_get (2) failed (%llu) (%d)\n",i,q);
+			printf("KISSDB_get (2) failed (%"PRIu64") (%d)\n",i,q);
 			return -1;
 		}
 		for(j=0;j<8;++j) {
 			if (v[j] != i) {
-				printf("KISSDB_get (2) failed, bad data (%llu)\n",i);
+				printf("KISSDB_get (2) failed, bad data (%"PRIu64")\n",i);
 				return -1;
 			}
 		}
@@ -384,12 +385,12 @@ int main(int argc,char **argv)
 
 	for(i=0;i<10000;++i) {
 		if ((q = KISSDB_get(&db,&i,v))) {
-			printf("KISSDB_get (3) failed (%llu) (%d)\n",i,q);
+			printf("KISSDB_get (3) failed (%"PRIu64") (%d)\n",i,q);
 			return -1;
 		}
 		for(j=0;j<8;++j) {
 			if (v[j] != i) {
-				printf("KISSDB_get (3) failed, bad data (%llu)\n",i);
+				printf("KISSDB_get (3) failed, bad data (%"PRIu64")\n",i);
 				return -1;
 			}
 		}
@@ -404,13 +405,13 @@ int main(int argc,char **argv)
 		if (i < 10000)
 			got_all_values[i] = 1;
 		else {
-			printf("KISSDB_Iterator_next failed, bad data (%llu)\n",i);
+			printf("KISSDB_Iterator_next failed, bad data (%"PRIu64")\n",i);
 			return -1;
 		}
 	}
 	for(i=0;i<10000;++i) {
 		if (!got_all_values[i]) {
-			printf("KISSDB_Iterator failed, missing value index %llu\n",i);
+			printf("KISSDB_Iterator failed, missing value index %"PRIu64"\n",i);
 			return -1;
 		}
 	}
