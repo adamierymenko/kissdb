@@ -50,10 +50,14 @@ int KISSDB_open(
 	}
 
 	httmp = malloc(db->hash_table_size_bytes);
+	if (!httmp)
+		return -2;
 	db->num_hash_tables = 0;
 	db->hash_tables = (uint64_t *)0;
 	while (fread(httmp,db->hash_table_size_bytes,1,db->f) == 1) {
 		db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
+		if (!db->hash_tables)
+			return -2;
 		memcpy(((uint8_t *)db->hash_tables) + (db->hash_table_size_bytes * db->num_hash_tables),httmp,db->hash_table_size_bytes);
 		++db->num_hash_tables;
 		if (httmp[db->hash_table_size]) {
@@ -187,6 +191,8 @@ put_no_match_next_hash_table:
 	endoffset = ftello(db->f);
 
 	db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
+	if (!db->hash_tables)
+		return -2; /* malloc failed */
 	cur_hash_table = &(db->hash_tables[(db->hash_table_size + 1) * db->num_hash_tables]);
 	memset(cur_hash_table,0,db->hash_table_size_bytes);
 
