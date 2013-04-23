@@ -38,6 +38,7 @@ Limitations:
  * No search for subsets of keys/values
  * No indexes
  * No transactions
+ * No special recovery features if a database gets corrupted
  * No built-in thread-safety (guard it with a mutex in MT code)
  * No built-in caching of data (only hash tables are cached for lookup speed)
  * So minimal it doesn't store meta-data about the database, so init parameters must be the same for a given DB file
@@ -59,7 +60,8 @@ structured storage, or widely varying key/value sizes. It's also probably not a 
 choice if you need a long-lived database for critical data, since it lacks recovery
 features and is brittle if its internals are modified. It would be better for a cache
 of data that can be restored or "re-learned," such as keys, Bitcoin transactions, nodes
-on a peer-to-peer network, log analysis results, etc.
+on a peer-to-peer network, log analysis results, rendered web pages, session cookies,
+auth tokens, etc.
 
 KISSDB is in the public domain. One reason it was written was the
 poverty of simple key/value databases with wide open licensing. Even old

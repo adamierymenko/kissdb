@@ -14,6 +14,11 @@ extern "C" {
 #endif
 
 /**
+ * Version: 1
+ */
+#define KISSDB_VERSION 1
+
+/**
  * KISSDB database state
  *
  * These fields can be read by a user, e.g. to look up key_size and
