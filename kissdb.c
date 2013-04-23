@@ -332,7 +332,7 @@ int main(int argc,char **argv)
 
 	if (KISSDB_open(&db,"test.db",KISSDB_OPEN_MODE_RWREPLACE,1024,8,sizeof(v))) {
 		printf("KISSDB_open failed\n");
-		return -1;
+		return 1;
 	}
 
 	printf("Adding and then re-getting 10000 64-byte values...\n");
@@ -342,17 +342,17 @@ int main(int argc,char **argv)
 			v[j] = i;
 		if (KISSDB_put(&db,&i,v)) {
 			printf("KISSDB_put failed (%"PRIu64")\n",i);
-			return -1;
+			return 1;
 		}
 		memset(v,0,sizeof(v));
 		if ((q = KISSDB_get(&db,&i,v))) {
 			printf("KISSDB_get (1) failed (%"PRIu64") (%d)\n",i,q);
-			return -1;
+			return 1;
 		}
 		for(j=0;j<8;++j) {
 			if (v[j] != i) {
 				printf("KISSDB_get (1) failed, bad data (%"PRIu64")\n",i);
-				return -1;
+				return 1;
 			}
 		}
 	}
@@ -362,12 +362,12 @@ int main(int argc,char **argv)
 	for(i=0;i<10000;++i) {
 		if ((q = KISSDB_get(&db,&i,v))) {
 			printf("KISSDB_get (2) failed (%"PRIu64") (%d)\n",i,q);
-			return -1;
+			return 1;
 		}
 		for(j=0;j<8;++j) {
 			if (v[j] != i) {
 				printf("KISSDB_get (2) failed, bad data (%"PRIu64")\n",i);
-				return -1;
+				return 1;
 			}
 		}
 	}
@@ -378,7 +378,7 @@ int main(int argc,char **argv)
 
 	if (KISSDB_open(&db,"test.db",KISSDB_OPEN_MODE_RDONLY,1024,8,sizeof(v))) {
 		printf("KISSDB_open failed\n");
-		return -1;
+		return 1;
 	}
 
 	printf("Getting 10000 64-byte values...\n");
@@ -386,12 +386,12 @@ int main(int argc,char **argv)
 	for(i=0;i<10000;++i) {
 		if ((q = KISSDB_get(&db,&i,v))) {
 			printf("KISSDB_get (3) failed (%"PRIu64") (%d)\n",i,q);
-			return -1;
+			return 1;
 		}
 		for(j=0;j<8;++j) {
 			if (v[j] != i) {
 				printf("KISSDB_get (3) failed, bad data (%"PRIu64")\n",i);
-				return -1;
+				return 1;
 			}
 		}
 	}
@@ -406,13 +406,13 @@ int main(int argc,char **argv)
 			got_all_values[i] = 1;
 		else {
 			printf("KISSDB_Iterator_next failed, bad data (%"PRIu64")\n",i);
-			return -1;
+			return 1;
 		}
 	}
 	for(i=0;i<10000;++i) {
 		if (!got_all_values[i]) {
 			printf("KISSDB_Iterator failed, missing value index %"PRIu64"\n",i);
-			return -1;
+			return 1;
 		}
 	}
 
