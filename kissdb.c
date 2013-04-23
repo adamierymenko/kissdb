@@ -6,7 +6,8 @@
 /* Compile with KISSDB_TEST to build as a test program. */
 
 /* Note: big-endian systems will need changes to implement byte swapping
- * on hash table file I/O. */
+ * on hash table file I/O. Or you could just use it as-is if you don't care
+ * that your database files will be unreadable on little-endian systems. */
 
 #define _FILE_OFFSET_BITS 64
 
