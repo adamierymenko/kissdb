@@ -50,8 +50,10 @@ int KISSDB_open(
 	}
 
 	httmp = malloc(db->hash_table_size_bytes);
-	if (!httmp)
+	if (!httmp) {
+		fclose(db->f);
 		return -2;
+	}
 	db->num_hash_tables = 0;
 	db->hash_tables = (uint64_t *)0;
 	while (fread(httmp,db->hash_table_size_bytes,1,db->f) == 1) {
@@ -154,10 +156,11 @@ int KISSDB_put(KISSDB *db,const void *key,const void *value)
 					klen -= (unsigned long)n;
 				}
 			}
-
-			if (fwrite(value,db->value_size,1,db->f) == 1)
+ 
+			if (fwrite(value,db->value_size,1,db->f) == 1) {
+				fflush(db->f);
 				return 0; /* success */
-			else return -1; /* I/O error */
+			} else return -1; /* I/O error */
 		} else {
 			/* add if an empty hash table slot is discovered */
 			if (fseeko(db->f,0,SEEK_END))
@@ -217,6 +220,8 @@ put_no_match_next_hash_table:
 	}
 
 	++db->num_hash_tables;
+
+	fflush(db->f);
 
 	return 0; /* success */
 }
