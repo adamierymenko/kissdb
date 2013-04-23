@@ -10,37 +10,54 @@ something that acts like one.
 
 It stores keys and values of fixed length in a stupid-simple file format
 based on fixed-size hash tables. If a hash collision occurrs, a new "page"
-of hash table is appended to the database. The database is append-only;
-there is no delete function. You can, however, change an existing value
-without increasing the size of the database. (Put will replace existing
-values.) The size of the hash table affects the trade-off between space
-efficiency and performance. If you expect more keys, use larger tables.
-But if you don't expect too many keys, large tables will waste space.
+of hash table is appended to the database. The format is append-only.
+There is no delete. Puts that replace an existing value, however, will not
+grow the file as they will overwrite the existing entry.
 
-That being said, it's pretty flexible and lacks limitations. 64-bit values
-are used, so there's no real file size limit. It's space-efficient, since
-there's no meta-data other than the hash tables. An effort is made to make
-it pretty robust on loss-of-power during write. In most cases this will
-only result in some wasted space, since hash table entries are written
-last. Iteration over all values is supported, though value order is
-undefined (as is usually the case with hash tables).
+Hash table size is a space/speed trade-off parameter. Larger hash tables
+will reduce collisions and speed things up a bit, at the expense of memory
+and disk space. A good size is usually about 1/2 the average number of
+entries you expect.
 
-It implements no caching of its own except for the hash tables to speed
-lookups, so you'll have to do that if you don't want to hit the disk for
-every get(). It also implements no thread synchronization, so it should be
-guarded by a mutex or something for multi-threaded apps. It presently
-has no awareness of byte order. Most everyting these days is little-endian,
-so that should be considered the "standard" for KISSDB database files.
-So on big-endian systems byte swapping will need to be added in the
-hash table I/O code.
+Features:
 
-If you want something full-featured, check out SQLite or Berkeley DB. If
-you want something super-duper-fast, check out Kyoto Cabinet. Both of these
-are substantially larger though. If all you want to do is remember stuff
-and look it up by key, you might consider this. Performance isn't bad for
-something so trivial, especially if your OS has efficient I/O.
+ * Tiny, compiles to ~4k on an x86_64 Linux system
+ * Small memory footprint (only caches hash tables)
+ * Very space-efficient (on disk) if small hash tables are used
+ * Makes a decent effort to be robust on power loss
+ * Pretty respectably fast, especially given its simplicity
+ * 64-bit, file size limit is 2^64 bytes
+ * Ports to anything with a C compiler and stdlib/stdio
+ * Public domain
 
-KISSDB is in the public domain, too. One reason it was written was the
+Limitations:
+
+ * Fixed-size keys and values, must recreate and copy to change any init size parameter
+ * Add/update only, no delete
+ * Iteration is supported but key order is undefined
+ * No search for subsets of keys/values
+ * No indexes
+ * No transactions
+ * No built-in thread-safety (guard it with a mutex in MT code)
+ * No built-in caching of data (only hash tables are cached for lookup speed)
+ * So minimal it doesn't store meta-data about the database, so init parameters must be the same for a given DB file
+ * No endian-awareness (currently), so big-endian DBs won't read on little-endian machines
+
+Alternative key/value store databases:
+
+ * SQLite (embedded SQL, public domain, much larger but very full-featured)
+ * Kyoto Cabinet
+ * GNU DBM (GDBM)
+ * Berkeley DB
+ * MemcacheDB
+ * NDBM (old-school but still usable)
+ * (probably others, use the Google)
+
+KISSDB is good if you want space-efficient relatively fast write-once/read-many storage
+of keys mapped to values. Its not a good choice if you need searches, indexes, delete,
+structured storage, or widely varying key/value sizes.
+
+KISSDB is in the public domain. One reason it was written was the
 poverty of simple key/value databases with wide open licensing. Even old
 ones like GDBM have GPL, not LGPL, licenses.
 
