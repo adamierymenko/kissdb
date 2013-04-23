@@ -16,6 +16,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define KISSDB_HEADER_SIZE ((sizeof(uint64_t) * 3) + 4)
+
 /* djb2 hash function */
 static uint64_t KISSDB_hash(const void *b,unsigned long len)
 {
@@ -34,38 +36,92 @@ int KISSDB_open(
 	unsigned long key_size,
 	unsigned long value_size)
 {
+	uint64_t tmp;
+	uint8_t tmp2[4];
 	uint64_t *httmp;
-
-	db->hash_table_size = hash_table_size;
-	db->key_size = key_size;
-	db->value_size = value_size;
-	db->hash_table_size_bytes = sizeof(uint64_t) * (hash_table_size + 1); /* [hash_table_size] == next table */
 
 	db->f = fopen(path,((mode == KISSDB_OPEN_MODE_RWREPLACE) ? "w+b" : ((mode == KISSDB_OPEN_MODE_RDWR) ? "r+b" : "rb")));
 	if (!db->f) {
 		if (mode == KISSDB_OPEN_MODE_RWCREAT)
 			db->f = fopen(path,"w+b");
 		if (!db->f)
-			return -1;
+			return KISSDB_ERROR_IO;
 	}
+
+	if (fseeko(db->f,0,SEEK_END)) {
+		fclose(db->f);
+		return KISSDB_ERROR_IO;
+	}
+	if (ftello(db->f) < KISSDB_HEADER_SIZE) {
+		/* write header if not already present */
+		if ((hash_table_size)&&(key_size)&&(value_size)) {
+			if (fseeko(db->f,0,SEEK_SET)) { fclose(db->f); return KISSDB_ERROR_IO; }
+			tmp2[0] = 'K'; tmp2[1] = 'd'; tmp2[2] = 'B'; tmp2[3] = KISSDB_VERSION;
+			if (fwrite(tmp2,4,1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+			tmp = hash_table_size;
+			if (fwrite(&tmp,sizeof(uint64_t),1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+			tmp = key_size;
+			if (fwrite(&tmp,sizeof(uint64_t),1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+			tmp = value_size;
+			if (fwrite(&tmp,sizeof(uint64_t),1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+			fflush(db->f);
+		} else {
+			fclose(db->f);
+			return KISSDB_ERROR_INVALID_PARAMETERS;
+		}
+	} else {
+		if (fseeko(db->f,0,SEEK_SET)) { fclose(db->f); return KISSDB_ERROR_IO; }
+		if (fread(tmp2,4,1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+		if ((tmp2[0] != 'K')||(tmp2[1] != 'd')||(tmp2[2] != 'B')||(tmp2[3] != KISSDB_VERSION)) {
+			fclose(db->f);
+			return KISSDB_ERROR_CORRUPT_DBFILE;
+		}
+		if (fread(&tmp,sizeof(uint64_t),1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+		if (!tmp) {
+			fclose(db->f);
+			return KISSDB_ERROR_CORRUPT_DBFILE;
+		}
+		hash_table_size = (unsigned long)tmp;
+		if (fread(&tmp,sizeof(uint64_t),1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+		if (!tmp) {
+			fclose(db->f);
+			return KISSDB_ERROR_CORRUPT_DBFILE;
+		}
+		key_size = (unsigned long)tmp;
+		if (fread(&tmp,sizeof(uint64_t),1,db->f) != 1) { fclose(db->f); return KISSDB_ERROR_IO; }
+		if (!tmp) {
+			fclose(db->f);
+			return KISSDB_ERROR_CORRUPT_DBFILE;
+		}
+		value_size = (unsigned long)tmp;
+	}
+
+	db->hash_table_size = hash_table_size;
+	db->key_size = key_size;
+	db->value_size = value_size;
+	db->hash_table_size_bytes = sizeof(uint64_t) * (hash_table_size + 1); /* [hash_table_size] == next table */
 
 	httmp = malloc(db->hash_table_size_bytes);
 	if (!httmp) {
 		fclose(db->f);
-		return -2;
+		return KISSDB_ERROR_MALLOC;
 	}
 	db->num_hash_tables = 0;
 	db->hash_tables = (uint64_t *)0;
 	while (fread(httmp,db->hash_table_size_bytes,1,db->f) == 1) {
 		db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
-		if (!db->hash_tables)
-			return -2;
+		if (!db->hash_tables) {
+			KISSDB_close(db);
+			free(httmp);
+			return KISSDB_ERROR_MALLOC;
+		}
 		memcpy(((uint8_t *)db->hash_tables) + (db->hash_table_size_bytes * db->num_hash_tables),httmp,db->hash_table_size_bytes);
 		++db->num_hash_tables;
 		if (httmp[db->hash_table_size]) {
 			if (fseeko(db->f,httmp[db->hash_table_size],SEEK_SET)) {
 				KISSDB_close(db);
-				return -1;
+				free(httmp);
+				return KISSDB_ERROR_IO;
 			}
 		} else break;
 	}
@@ -85,7 +141,7 @@ void KISSDB_close(KISSDB *db)
 
 int KISSDB_get(KISSDB *db,const void *key,void *vbuf)
 {
-	uint8_t tmp[1024];
+	uint8_t tmp[4096];
 	const uint8_t *kptr;
 	unsigned long klen,i;
 	uint64_t hash = KISSDB_hash(key,db->key_size) % (uint64_t)db->hash_table_size;
@@ -98,7 +154,7 @@ int KISSDB_get(KISSDB *db,const void *key,void *vbuf)
 		offset = cur_hash_table[hash];
 		if (offset) {
 			if (fseeko(db->f,offset,SEEK_SET))
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 
 			kptr = (const uint8_t *)key;
 			klen = db->key_size;
@@ -114,7 +170,7 @@ int KISSDB_get(KISSDB *db,const void *key,void *vbuf)
 
 			if (fread(vbuf,db->value_size,1,db->f) == 1)
 				return 0; /* success */
-			else return -1; /* I/O error */
+			else return KISSDB_ERROR_IO;
 		} else return 1; /* not found */
 get_no_match_next_hash_table:
 		cur_hash_table += db->hash_table_size + 1;
@@ -125,7 +181,7 @@ get_no_match_next_hash_table:
 
 int KISSDB_put(KISSDB *db,const void *key,const void *value)
 {
-	uint8_t tmp[1024];
+	uint8_t tmp[4096];
 	const uint8_t *kptr;
 	unsigned long klen,i;
 	uint64_t hash = KISSDB_hash(key,db->key_size) % (uint64_t)db->hash_table_size;
@@ -135,15 +191,14 @@ int KISSDB_put(KISSDB *db,const void *key,const void *value)
 	uint64_t *cur_hash_table;
 	long n;
 
-	lasthtoffset = 0;
-	htoffset = 0;
+	lasthtoffset = htoffset = KISSDB_HEADER_SIZE;
 	cur_hash_table = db->hash_tables;
 	for(i=0;i<db->num_hash_tables;++i) {
 		offset = cur_hash_table[hash];
 		if (offset) {
 			/* rewrite if already exists */
 			if (fseeko(db->f,offset,SEEK_SET))
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 
 			kptr = (const uint8_t *)key;
 			klen = db->key_size;
@@ -160,22 +215,22 @@ int KISSDB_put(KISSDB *db,const void *key,const void *value)
 			if (fwrite(value,db->value_size,1,db->f) == 1) {
 				fflush(db->f);
 				return 0; /* success */
-			} else return -1; /* I/O error */
+			} else return KISSDB_ERROR_IO;
 		} else {
 			/* add if an empty hash table slot is discovered */
 			if (fseeko(db->f,0,SEEK_END))
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 			endoffset = ftello(db->f);
 
 			if (fwrite(key,db->key_size,1,db->f) != 1)
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 			if (fwrite(value,db->value_size,1,db->f) != 1)
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 
 			if (fseeko(db->f,htoffset + (sizeof(uint64_t) * hash),SEEK_SET))
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 			if (fwrite(&endoffset,sizeof(uint64_t),1,db->f) != 1)
-				return -1; /* I/O error */
+				return KISSDB_ERROR_IO;
 			cur_hash_table[hash] = endoffset;
 
 			fflush(db->f);
@@ -190,12 +245,12 @@ put_no_match_next_hash_table:
 
 	/* if no existing slots, add a new page of hash table entries */
 	if (fseeko(db->f,0,SEEK_END))
-		return -1; /* I/O error */
+		return KISSDB_ERROR_IO;
 	endoffset = ftello(db->f);
 
 	db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
 	if (!db->hash_tables)
-		return -2; /* malloc failed */
+		return KISSDB_ERROR_MALLOC;
 	cur_hash_table = &(db->hash_tables[(db->hash_table_size + 1) * db->num_hash_tables]);
 	memset(cur_hash_table,0,db->hash_table_size_bytes);
 
@@ -203,19 +258,19 @@ put_no_match_next_hash_table:
 
 	if (fwrite(cur_hash_table,db->hash_table_size_bytes,1,db->f) != 1) {
 		db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * db->num_hash_tables);
-		return -1; /* I/O error */
+		return KISSDB_ERROR_IO;
 	}
 
 	if (fwrite(key,db->key_size,1,db->f) != 1)
-		return -1; /* I/O error */
+		return KISSDB_ERROR_IO;
 	if (fwrite(value,db->value_size,1,db->f) != 1)
-		return -1; /* I/O error */
+		return KISSDB_ERROR_IO;
 
 	if (db->num_hash_tables) {
 		if (fseeko(db->f,lasthtoffset + (sizeof(uint64_t) * db->hash_table_size),SEEK_SET))
-			return -1; /* I/O error */
+			return KISSDB_ERROR_IO;
 		if (fwrite(&endoffset,sizeof(uint64_t),1,db->f) != 1)
-			return -1; /* I/O error */
+			return KISSDB_ERROR_IO;
 		db->hash_tables[((db->hash_table_size + 1) * (db->num_hash_tables - 1)) + db->hash_table_size] = endoffset;
 	}
 
@@ -246,11 +301,11 @@ int KISSDB_Iterator_next(KISSDB_Iterator *dbi,void *kbuf,void *vbuf)
 			}
 		}
 		if (fseeko(dbi->db->f,offset,SEEK_SET))
-			return -1;
+			return KISSDB_ERROR_IO;
 		if (fread(kbuf,dbi->db->key_size,1,dbi->db->f) != 1)
-			return -1;
+			return KISSDB_ERROR_IO;
 		if (fread(vbuf,dbi->db->value_size,1,dbi->db->f) != 1)
-			return -1;
+			return KISSDB_ERROR_IO;
 		if (++dbi->h_idx >= dbi->db->hash_table_size) {
 			dbi->h_idx = 0;
 			++dbi->h_no;

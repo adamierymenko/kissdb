@@ -41,7 +41,6 @@ Limitations:
  * No special recovery features if a database gets corrupted
  * No built-in thread-safety (guard it with a mutex in MT code)
  * No built-in caching of data (only hash tables are cached for lookup speed)
- * So minimal it doesn't store meta-data about the database, so init parameters must be the same for a given DB file
  * No endian-awareness (currently), so big-endian DBs won't read on little-endian machines
 
 Alternative key/value stores and embedded databases:

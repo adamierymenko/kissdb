@@ -14,9 +14,11 @@ extern "C" {
 #endif
 
 /**
- * Version: 1
+ * Version: 2
+ *
+ * This is changed any time the file format changes.
  */
-#define KISSDB_VERSION 1
+#define KISSDB_VERSION 2
 
 /**
  * KISSDB database state
@@ -33,6 +35,26 @@ typedef struct {
 	uint64_t *hash_tables;
 	FILE *f;
 } KISSDB;
+
+/**
+ * I/O error or file not found
+ */
+#define KISSDB_ERROR_IO -1
+
+/**
+ * Out of memory
+ */
+#define KISSDB_ERROR_MALLOC -2
+
+/**
+ * Invalid paramters (e.g. missing _size paramters on init to create database)
+ */
+#define KISSDB_ERROR_INVALID_PARAMETERS -3
+
+/**
+ * Database file appears corrupt
+ */
+#define KISSDB_ERROR_CORRUPT_DBFILE -4
 
 /**
  * Open mode: read only
@@ -57,10 +79,11 @@ typedef struct {
 /**
  * Open database
  *
- * Note that the three size parameters are not stored in the database
- * and must remain constant for a given database file. To redefine them,
- * the database must be copied entry by entry into a new file with new
- * parameters.
+ * The three _size parameters must be specified if the database could
+ * be created or re-created. Otherwise an error will occur. If the
+ * database already exists, these parameters are ignored and are read
+ * from the database. You can check the struture afterwords to see what
+ * they were.
  *
  * @param db Database struct
  * @param path Path to file
