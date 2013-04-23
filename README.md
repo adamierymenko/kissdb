@@ -8,12 +8,14 @@ It's written in plain vanilla C using only the standard string and FILE
 I/O functions, and should port to just about anything with a disk or
 something that acts like one.
 
-It stores keys and values of fixed length in a stupid-stimple file format
+It stores keys and values of fixed length in a stupid-simple file format
 based on fixed-size hash tables. If a hash collision occurrs, a new "page"
 of hash table is appended to the database. The database is append-only;
 there is no delete function. You can, however, change an existing value
 without increasing the size of the database. (Put will replace existing
-values.)
+values.) The size of the hash table affects the trade-off between space
+efficiency and performance. If you expect more keys, use larger tables.
+But if you don't expect too many keys, large tables will waste space.
 
 That being said, it's pretty flexible and lacks limitations. 64-bit values
 are used, so there's no real file size limit. It's space-efficient, since
