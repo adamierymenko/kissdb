@@ -40,6 +40,7 @@ int KISSDB_open(
 	uint64_t tmp;
 	uint8_t tmp2[4];
 	uint64_t *httmp;
+	uint64_t *hash_tables_rea;
 
 	db->f = fopen(path,((mode == KISSDB_OPEN_MODE_RWREPLACE) ? "w+b" : ((mode == KISSDB_OPEN_MODE_RDWR) ? "r+b" : "rb")));
 	if (!db->f) {
@@ -110,12 +111,14 @@ int KISSDB_open(
 	db->num_hash_tables = 0;
 	db->hash_tables = (uint64_t *)0;
 	while (fread(httmp,db->hash_table_size_bytes,1,db->f) == 1) {
-		db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
-		if (!db->hash_tables) {
+		hash_tables_rea = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
+		if (!hash_tables_rea) {
 			KISSDB_close(db);
 			free(httmp);
 			return KISSDB_ERROR_MALLOC;
 		}
+		db->hash_tables = hash_tables_rea;
+
 		memcpy(((uint8_t *)db->hash_tables) + (db->hash_table_size_bytes * db->num_hash_tables),httmp,db->hash_table_size_bytes);
 		++db->num_hash_tables;
 		if (httmp[db->hash_table_size]) {
@@ -190,6 +193,7 @@ int KISSDB_put(KISSDB *db,const void *key,const void *value)
 	uint64_t htoffset,lasthtoffset;
 	uint64_t endoffset;
 	uint64_t *cur_hash_table;
+	uint64_t *hash_tables_rea;
 	long n;
 
 	lasthtoffset = htoffset = KISSDB_HEADER_SIZE;
@@ -249,9 +253,10 @@ put_no_match_next_hash_table:
 		return KISSDB_ERROR_IO;
 	endoffset = ftello(db->f);
 
-	db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
-	if (!db->hash_tables)
+	hash_tables_rea = realloc(db->hash_tables,db->hash_table_size_bytes * (db->num_hash_tables + 1));
+	if (!hash_tables_rea)
 		return KISSDB_ERROR_MALLOC;
+	db->hash_tables = hash_tables_rea;
 	cur_hash_table = &(db->hash_tables[(db->hash_table_size + 1) * db->num_hash_tables]);
 	memset(cur_hash_table,0,db->hash_table_size_bytes);
 
