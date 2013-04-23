@@ -54,8 +54,12 @@ Alternative key/value stores and embedded databases:
  * (probably others, use the Google)
 
 KISSDB is good if you want space-efficient relatively fast write-once/read-many storage
-of keys mapped to values. Its not a good choice if you need searches, indexes, delete,
-structured storage, or widely varying key/value sizes.
+of keys mapped to values. It's not a good choice if you need searches, indexes, delete,
+structured storage, or widely varying key/value sizes. It's also probably not a good
+choice if you need a long-lived database for critical data, since it lacks recovery
+features and is brittle if its internals are modified. It would be better for a cache
+of data that can be restored or "re-learned," such as keys, Bitcoin transactions, nodes
+on a peer-to-peer network, log analysis results, etc.
 
 KISSDB is in the public domain. One reason it was written was the
 poverty of simple key/value databases with wide open licensing. Even old
