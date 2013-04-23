@@ -262,10 +262,8 @@ put_no_match_next_hash_table:
 
 	cur_hash_table[hash] = endoffset + db->hash_table_size_bytes; /* where new entry will go */
 
-	if (fwrite(cur_hash_table,db->hash_table_size_bytes,1,db->f) != 1) {
-		db->hash_tables = realloc(db->hash_tables,db->hash_table_size_bytes * db->num_hash_tables);
+	if (fwrite(cur_hash_table,db->hash_table_size_bytes,1,db->f) != 1)
 		return KISSDB_ERROR_IO;
-	}
 
 	if (fwrite(key,db->key_size,1,db->f) != 1)
 		return KISSDB_ERROR_IO;
