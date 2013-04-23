@@ -19,7 +19,11 @@ But if you don't expect too many keys, large tables will waste space.
 
 That being said, it's pretty flexible and lacks limitations. 64-bit values
 are used, so there's no real file size limit. It's space-efficient, since
-there's no meta-data other than the hash tables.
+there's no meta-data other than the hash tables. An effort is made to make
+it pretty robust on loss-of-power during write. In most cases this will
+only result in some wasted space, since hash table entries are written
+last. Iteration over all values is supported, though value order is
+undefined (as is usually the case with hash tables).
 
 It implements no caching of its own except for the hash tables to speed
 lookups, so you'll have to do that if you don't want to hit the disk for
@@ -29,8 +33,6 @@ has no awareness of byte order. Most everyting these days is little-endian,
 so that should be considered the "standard" for KISSDB database files.
 So on big-endian systems byte swapping will need to be added in the
 hash table I/O code.
-
-Iteration over all values is supported, though values are unordered.
 
 If you want something full-featured, check out SQLite or Berkeley DB. If
 you want something super-duper-fast, check out Kyoto Cabinet. Both of these
