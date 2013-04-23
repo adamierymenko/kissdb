@@ -1,3 +1,13 @@
+/* (Keep It) Simple Stupid Database
+ *
+ * Written by Adam Ierymenko <adam.ierymenko@zerotier.com>
+ * KISSDB is in the public domain and is distributed with NO WARRANTY. */
+
+/* Compile with KISSDB_TEST to build as a test program. */
+
+/* Note: big-endian systems will need changes to implement byte swapping
+ * on hash table file I/O. */
+
 #define _FILE_OFFSET_BITS 64
 
 #include "kissdb.h"
