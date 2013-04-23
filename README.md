@@ -43,13 +43,13 @@ Limitations:
  * So minimal it doesn't store meta-data about the database, so init parameters must be the same for a given DB file
  * No endian-awareness (currently), so big-endian DBs won't read on little-endian machines
 
-Alternative key/value store databases:
+Alternative key/value stores and embedded databases:
 
  * SQLite (embedded SQL, public domain, much larger but very full-featured)
  * Kyoto Cabinet
  * GNU DBM (GDBM)
  * Berkeley DB
- * MemcacheDB
+ * Memcached / MemcacheDB
  * NDBM (old-school but still usable)
  * (probably others, use the Google)
 
