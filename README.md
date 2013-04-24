@@ -45,6 +45,7 @@ Limitations:
 
 Alternative key/value stores and embedded databases:
 
+ * [MDB](http://symas.com/mdb/) is probably the closest thing, and is very fast.
  * SQLite (embedded SQL, public domain, much larger but very full-featured)
  * Kyoto Cabinet
  * GNU DBM (GDBM)
