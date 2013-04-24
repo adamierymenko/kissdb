@@ -16,7 +16,9 @@ extern "C" {
 /**
  * Version: 2
  *
- * This is changed any time the file format changes.
+ * This is the file format identifier, and changes any time the file
+ * format changes. The code version will be this dot something, and can
+ * be seen in tags in the git repository.
  */
 #define KISSDB_VERSION 2
 
