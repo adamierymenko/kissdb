@@ -45,14 +45,11 @@ Limitations:
 
 Alternative key/value stores and embedded databases:
 
- * [MDB](http://symas.com/mdb/) is probably the closest thing, and is very fast.
- * SQLite (embedded SQL, public domain, much larger but very full-featured)
- * Kyoto Cabinet
- * GNU DBM (GDBM)
- * Berkeley DB
- * Memcached / MemcacheDB
- * NDBM (old-school but still usable)
- * (probably others, use the Google)
+ * [MDB](http://symas.com/mdb/) uses mmap() and is very fast (not quite as tiny/simple/portable)
+ * [CDB](http://cr.yp.to/cdb.html) is also minimal and fast, probably the closest thing to this (but has a 4gb size limit)
+ * [Kyoto Cabinet](http://fallabs.com/kyotocabinet/) is very fast, full-featured, and modern (license required for commercial use)
+ * [SQLite](http://www.sqlite.org/) gives you a complete embedded SQL server (public domain, very mature, much larger)
+ * Others include GDBM, NDBM, Berkeley DB, etc. Use your Googles. :)
 
 KISSDB is good if you want space-efficient relatively fast write-once/read-many storage
 of keys mapped to values. It's not a good choice if you need searches, indexes, delete,
