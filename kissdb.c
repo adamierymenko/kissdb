@@ -42,7 +42,7 @@ int KISSDB_open(
 	uint64_t *httmp;
 	uint64_t *hash_tables_rea;
 
-	db->f = fopen(path,((mode == KISSDB_OPEN_MODE_RWREPLACE) ? "w+b" : ((mode == KISSDB_OPEN_MODE_RDWR) ? "r+b" : "rb")));
+	db->f = fopen(path,((mode == KISSDB_OPEN_MODE_RWREPLACE) ? "w+b" : (((mode == KISSDB_OPEN_MODE_RDWR)||(mode == KISSDB_OPEN_MODE_RWCREAT)) ? "r+b" : "rb")));
 	if (!db->f) {
 		if (mode == KISSDB_OPEN_MODE_RWCREAT)
 			db->f = fopen(path,"w+b");
