@@ -1,7 +1,9 @@
 /* (Keep It) Simple Stupid Database
  *
  * Written by Adam Ierymenko <adam.ierymenko@zerotier.com>
- * KISSDB is in the public domain and is distributed with NO WARRANTY. */
+ * KISSDB is in the public domain and is distributed with NO WARRANTY.
+ *
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 #ifndef ___KISSDB_H
 #define ___KISSDB_H

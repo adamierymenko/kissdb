@@ -3,6 +3,8 @@
 KISSDB file format (version 2)
 Author: Adam Ierymenko <adam.ierymenko@zerotier.com>
 
+http://creativecommons.org/publicdomain/zero/1.0/
+
 -----
 
 In keeping with the goal of minimalism the file format is very simple, the

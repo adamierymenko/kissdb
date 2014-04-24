@@ -60,9 +60,8 @@ of data that can be restored or "re-learned," such as keys, Bitcoin transactions
 on a peer-to-peer network, log analysis results, rendered web pages, session cookies,
 auth tokens, etc.
 
-KISSDB is in the public domain. One reason it was written was the
-poverty of simple key/value databases with wide open licensing. Even old
-ones like GDBM have GPL, not LGPL, licenses.
+KISSDB is in the public domain as according to the [Creative Commons Public Domain Dedication](http://creativecommons.org/publicdomain/zero/1.0/).
+One reason it was written was the poverty of simple key/value databases with wide open licensing. Even old ones like GDBM have GPL, not LGPL, licenses.
 
 See comments in kissdb.h for documentation. Makefile can be used to build
 a test program on systems with gcc.
