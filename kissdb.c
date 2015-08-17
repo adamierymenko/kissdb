@@ -234,6 +234,9 @@ int KISSDB_put(KISSDB *db,const void *key,const void *value)
 					klen -= (unsigned long)n;
 				}
 			}
+
+			/* C99 spec demands seek after fread(), required for Windows */
+			fseeko(db->f,0,SEEK_CUR);
  
 			if (fwrite(value,db->value_size,1,db->f) == 1) {
 				fflush(db->f);
